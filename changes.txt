@@ -1,0 +1,4 @@
+in nnUNetTrainerCELoss made new version of nnUNetTrainerCELossLesionSplit that uses
+batchnorm instead of instance norm
+
+in main.py replace the trainer with nnUNetTrainerCELossLesionSplitBN trainer
