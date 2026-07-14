@@ -7,7 +7,7 @@ import numpy as np
 from batchgenerators.utilities.file_and_folder_operations import save_json
 
 PDAC_LABEL = 1
-N_FOLDS = 5
+N_FOLDS = 4
 N_QUARTILE_BINS = 4
 
 RAW_LABELS_DIR = "workspace/workspace/nnUNet_raw/Dataset101_PDAC/labelsTr"
