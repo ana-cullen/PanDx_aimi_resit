@@ -4,6 +4,7 @@ import torch.nn
 from torch import nn
 from torch.nn.modules.conv import _ConvNd
 from torch.nn.modules.batchnorm import _BatchNorm
+from SaBN.SaResNet.SimpleSaBN import SaBN2d, SaBN3d
 
 def convert_conv_op_to_dim(conv_op: Type[_ConvNd]) -> int:
     """
@@ -33,10 +34,7 @@ def get_matching_sabatchnorm(conv_op: Type[_ConvNd] = None, dimension: int = Non
     if conv_op is not None:
         dimension = convert_conv_op_to_dim(conv_op)
     assert dimension in [1, 2, 3], 'Dimension must be 1, 2 or 3'
-    if dimension == 1:
-        return SaBatchNorm1d
-    elif dimension == 2:
-        return SaBatchNorm2d
+    if dimension == 2:
+        return SaBN2d
     elif dimension == 3:
-        return SaBatchNorm3d
-
+        return SaBN3d
