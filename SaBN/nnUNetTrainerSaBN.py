@@ -28,7 +28,7 @@ class nnUNetTrainerSaBN(nnUNetTrainer):
     #
     #   {"PANORAMA_0001": 0, "PANORAMA_0002": 1, "PANORAMA_0350": 0, ...}
     # ------------------------------------------------------------------
-    COND_MAP_PATH = os.environ.get("SABN_COND_MAP_PATH", None)
+    COND_MAP_PATH = "patient_sex_map.json"
 
     def __init__(self, plans, configuration, fold, dataset_json,
                  unpack_dataset=True, device=torch.device('cuda')):

@@ -34,6 +34,9 @@ class SaBN2d(nn.Module):
         shared_b = self.shared_beta.view(1, -1, 1, 1)
         x_sa = shared_g * x_hat + shared_b
 
+        if cond == "U":
+            return x_sa
+        
         g_i = self.cond_gamma(cond).view(-1, x.shape[1], 1, 1)
         b_i = self.cond_beta(cond).view(-1, x.shape[1], 1, 1)
 
@@ -67,6 +70,9 @@ class SaBN3d(nn.Module):
         shared_b = self.shared_beta.view(1, -1, 1, 1, 1)
         x_sa = shared_g * x_hat + shared_b
 
+        if cond == "U":
+            return x_sa
+        
         g_i = self.cond_gamma(cond).view(-1, x.shape[1], 1, 1, 1)
         b_i = self.cond_beta(cond).view(-1, x.shape[1], 1, 1, 1)
 
