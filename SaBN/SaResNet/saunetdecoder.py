@@ -5,9 +5,9 @@ from typing import Union, List, Tuple, Type
 
 from torch.nn.modules.dropout import _DropoutNd
 
-from SaBN.SaResNet.saconvblocks import SaStackedConvBlocks
+from .saconvblocks import SaStackedConvBlocks
 from dynamic_network_architectures.building_blocks.helper import get_matching_convtransp
-from SaBN.SaResNet.saresencoder import SaResidualEncoder
+from .saresencoder import SaResidualEncoder
 
 
 class SaUNetDecoder(nn.Module):

@@ -5,9 +5,9 @@ from typing import Union, Type, List, Tuple
 
 from torch.nn.modules.conv import _ConvNd
 from torch.nn.modules.dropout import _DropoutNd
-from SaBN.SaResNet.saresidual import SaStackedResidualBlocks, SaBottleneckD, SaBasicBlockD
+from .saresidual import SaStackedResidualBlocks, SaBottleneckD, SaBasicBlockD
 from dynamic_network_architectures.building_blocks.helper import maybe_convert_scalar_to_list, get_matching_pool_op
-from SaBN.SaResNet.saconvblocks import SaStackedConvBlocks
+from .saconvblocks import SaStackedConvBlocks
 
 
 class StageNet(nn.Module):

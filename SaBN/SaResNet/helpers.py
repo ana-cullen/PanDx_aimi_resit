@@ -4,14 +4,14 @@ import torch.nn
 from torch import nn
 from torch.nn.modules.conv import _ConvNd
 from torch.nn.modules.batchnorm import _BatchNorm
-from SaBN.SaResNet.SimpleSaBN import SaBN2d, SaBN3d
+from .SimpleSaBN import SaBN2d, SaBN3d
 from dynamic_network_architectures.architectures.unet import PlainConvUNet, ResidualEncoderUNet
 from dynamic_network_architectures.building_blocks.helper import get_matching_instancenorm, convert_dim_to_conv_op
 from dynamic_network_architectures.initialization.weight_init import init_last_bn_before_add_to_0
 from nnunetv2.utilities.network_initialization import InitWeights_He
 from nnunetv2.utilities.plans_handling.plans_handler import ConfigurationManager, PlansManager
 from torch import nn
-from saunet import SaResidualEncoderUNet
+from .saunet import SaResidualEncoderUNet
 
 def convert_conv_op_to_dim(conv_op: Type[_ConvNd]) -> int:
     """

@@ -12,9 +12,9 @@ from dynamic_network_architectures.building_blocks.helper import convert_conv_op
 # uses yet a third convention, `from SaResNet.X import ...`). Only one of
 # these can resolve regardless of how the package is laid out on disk --
 # made consistent with saresencoder.py/saunetdecoder.py's convention here.
-from SaBN.SaResNet.saresidual import SaBasicBlockD, SaBottleneckD
-from SaBN.SaResNet.saresencoder import SaResidualEncoder
-from SaBN.SaResNet.saunetdecoder import SaUNetDecoder
+from .saresidual import SaBasicBlockD, SaBottleneckD
+from .saresencoder import SaResidualEncoder
+from .saunetdecoder import SaUNetDecoder
 from dynamic_network_architectures.initialization.weight_init import InitWeights_He
 from dynamic_network_architectures.initialization.weight_init import init_last_bn_before_add_to_0
 from torch import nn
