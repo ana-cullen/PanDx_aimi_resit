@@ -4,7 +4,7 @@ from typing import Dict
 
 from nnunetv2.training.nnUNetTrainer.nnUNetTrainer import nnUNetTrainer
 from nnunetv2.utilities.plans_handling.plans_handler import ConfigurationManager, PlansManager
-from nnunetv2.utilities.get_network_from_plans import get_network_from_plans
+from SaResNet.helpers import get_network_from_plans
 from torch import autocast, nn
 import torch
 from nnunetv2.utilities.helpers import empty_cache, dummy_context
