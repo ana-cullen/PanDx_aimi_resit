@@ -1,5 +1,4 @@
 LICENSE
-README.md
 pyproject.toml
 setup.py
 nnunetv2/__init__.py
