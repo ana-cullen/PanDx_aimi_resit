@@ -216,18 +216,10 @@ class DefaultPreprocessor(object):
                                                                dataset_json['file_ending'])
         output_directory = join(nnUNet_preprocessed, dataset_name, configuration_manager.data_identifier)
 
-        resume = os.environ.get('nnUNet_resume_preprocessing', '0') == '1'
-
-        if isdir(output_directory) and not resume:
+        if isdir(output_directory):
             shutil.rmtree(output_directory)
 
         maybe_mkdir_p(output_directory)
-
-        if resume:
-            # .pkl is written after the .npz, so its presence means the case finished writing
-            done = [i for i in identifiers if isfile(join(output_directory, i + '.pkl'))]
-            identifiers = [i for i in identifiers if i not in done]
-            print(f'Resuming: {len(done)} cases already preprocessed, {len(identifiers)} to go')
 
         output_filenames_truncated = [join(output_directory, i) for i in identifiers]
 

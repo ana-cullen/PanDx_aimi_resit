@@ -252,7 +252,7 @@ def run(args):
         output_dir=cropped_pred_folder,
         task=107, 
         trainer="nnUNetTrainerCELossLesionSplitSaBN",
-        plan="nnUNetPlans",
+        plan="nnUNetPlans_v3",
         folds="0,1,2,3,4",
         store_probability_maps=True)
 

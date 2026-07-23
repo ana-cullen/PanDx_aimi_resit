@@ -8,4 +8,4 @@ source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 #   - 5-fold ensemble: final prediction averages softmax across all 5 folds
 for FOLD in 0 1 2 3 4; do
     nnUNetv2_train 101 3d_fullres $FOLD -tr nnUNetTrainerCELossLesionSplitSaBN -p nnUNetPlans_v3 --npz --c
-done 
+done
