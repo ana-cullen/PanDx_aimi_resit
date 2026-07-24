@@ -250,9 +250,9 @@ def run(args):
         nnunet_model_dir=args.model_dir, 
         input_dir=cropped_image_folder, 
         output_dir=cropped_pred_folder,
-        task=107, 
+        task=101, 
         trainer="nnUNetTrainerCELossLesionSplitSaBN",
-        plan="nnUNetPlans_v3",
+        plan="resEncUNetPlansSabn",
         folds="0,1,2,3,4",
         store_probability_maps=True)
 
