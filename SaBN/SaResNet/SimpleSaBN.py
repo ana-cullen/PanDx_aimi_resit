@@ -19,8 +19,7 @@ class SaBN2d(nn.Module):
         # independent per-site affine layers
         self.cond_gamma = nn.Embedding(num_conditions, num_features)
         self.cond_beta = nn.Embedding(num_conditions, num_features)
-        # FIX: was referencing self.site_gamma / self.site_beta, which are
-        # never defined — the attributes created above are cond_gamma/cond_beta
+
         nn.init.ones_(self.cond_gamma.weight)
         nn.init.zeros_(self.cond_beta.weight)
 
@@ -28,19 +27,21 @@ class SaBN2d(nn.Module):
         # x: (B, C, H, W)   cond: (B,) long tensor
         x_hat = self.norm(x)
 
-        # FIX: was .view(1, -1, 1, 1, 1) (5D, copy-pasted from the 3D
-        # version) against a 4D (B, C, H, W) tensor -> shape-mismatch error.
         shared_g = self.shared_gamma.view(1, -1, 1, 1)
         shared_b = self.shared_beta.view(1, -1, 1, 1)
         x_sa = shared_g * x_hat + shared_b
 
-        if cond == "U":
-            return x_sa
-        
-        g_i = self.cond_gamma(cond).view(-1, x.shape[1], 1, 1)
-        b_i = self.cond_beta(cond).view(-1, x.shape[1], 1, 1)
+        # if case is missing clinical information then skip the independent
+        # affine transformation for that sample. 
+        cond_safe = cond.clamp(min=0)  # embedding index 0 is always valid
+        g_i = self.cond_gamma(cond_safe).view(-1, x.shape[1], 1, 1)
+        b_i = self.cond_beta(cond_safe).view(-1, x.shape[1], 1, 1)
 
-        return g_i * x_sa + b_i
+        known = (cond > 0).float().view(-1, 1, 1, 1)
+        g_eff = known * g_i + (1 - known)
+        b_eff = known * b_i
+
+        return g_eff * x_sa + b_eff
 
 
 class SaBN3d(nn.Module):
@@ -58,7 +59,7 @@ class SaBN3d(nn.Module):
 
         self.cond_gamma = nn.Embedding(num_conditions, num_features)
         self.cond_beta = nn.Embedding(num_conditions, num_features)
-        # FIX: same self.site_gamma / self.site_beta typo as SaBN2d
+
         nn.init.ones_(self.cond_gamma.weight)
         nn.init.zeros_(self.cond_beta.weight)
 
@@ -70,10 +71,14 @@ class SaBN3d(nn.Module):
         shared_b = self.shared_beta.view(1, -1, 1, 1, 1)
         x_sa = shared_g * x_hat + shared_b
 
-        if cond == "U":
-            return x_sa
-        
-        g_i = self.cond_gamma(cond).view(-1, x.shape[1], 1, 1, 1)
-        b_i = self.cond_beta(cond).view(-1, x.shape[1], 1, 1, 1)
+        # if case is missing clinical information then skip the independent
+        # affine transformation for that sample. 
+        cond_safe = cond.clamp(min=0)  # embedding index 0 is always valid
+        g_i = self.cond_gamma(cond_safe).view(-1, x.shape[1], 1, 1, 1)
+        b_i = self.cond_beta(cond_safe).view(-1, x.shape[1], 1, 1, 1)
 
-        return g_i * x_sa + b_i
+        known = (cond > 0).float().view(-1, 1, 1, 1, 1)
+        g_eff = known * g_i + (1 - known)
+        b_eff = known * b_i
+
+        return g_eff * x_sa + b_eff
