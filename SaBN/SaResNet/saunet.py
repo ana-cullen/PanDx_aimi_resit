@@ -1,10 +1,6 @@
 from typing import Union, Type, List, Tuple
 
 import torch
-from dynamic_network_architectures.architectures.abstract_arch import (
-    AbstractDynamicNetworkArchitectures,
-    test_submodules_loadable,
-)
 from dynamic_network_architectures.building_blocks.helper import convert_conv_op_to_dim
 # FIX: these two were bare imports (`from saresidual import ...`,
 # `from saresencoder import ...`), while every other file in the package
@@ -22,7 +18,7 @@ from torch.nn.modules.conv import _ConvNd
 from torch.nn.modules.dropout import _DropoutNd
 
 
-class SaResidualEncoderUNet(AbstractDynamicNetworkArchitectures):
+class SaResidualEncoderUNet(nn.Module):
     def __init__(
         self,
         input_channels: int,

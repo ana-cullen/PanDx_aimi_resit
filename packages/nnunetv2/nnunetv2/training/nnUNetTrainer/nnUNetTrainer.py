@@ -335,10 +335,8 @@ class nnUNetTrainer(object):
             # self.print_to_log_file("worker", my_rank, "oversample", oversample_percents[my_rank])
             # self.print_to_log_file("worker", my_rank, "batch_size", batch_sizes[my_rank])
 
-            # self.batch_size = batch_sizes[my_rank]
+            self.batch_size = batch_sizes[my_rank]
             self.oversample_foreground_percent = oversample_percents[my_rank]
-
-        # self.batch_size = 1 ################################################################################################################################################
 
     def _build_loss(self):
         if self.label_manager.has_regions:

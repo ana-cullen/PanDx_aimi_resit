@@ -51,7 +51,8 @@ def get_network_from_plans(plans_manager: PlansManager,
                            dataset_json: dict,
                            configuration_manager: ConfigurationManager,
                            num_input_channels: int,
-                           deep_supervision: bool = True):
+                           deep_supervision: bool = True,
+                           num_conditions: int = 1):
     """
     we may have to change this in the future to accommodate other plans -> network mappings
 
@@ -101,9 +102,12 @@ def get_network_from_plans(plans_manager: PlansManager,
                                                               'the init of your nnUNetModule to accomodate that.'
     network_class = mapping[segmentation_network_class_name]
 
+    if segmentation_network_class_name == 'SaResidualEncoderUNet':
+        kwargs['SaResidualEncoderUNet']['norm_op_kwargs']['num_conditions'] = num_conditions
+
     conv_or_blocks_per_stage = {
         'n_conv_per_stage'
-        if network_class != ResidualEncoderUNet else 'n_blocks_per_stage': configuration_manager.n_conv_per_stage_encoder,
+        if network_class == PlainConvUNet else 'n_blocks_per_stage': configuration_manager.n_conv_per_stage_encoder,
         'n_conv_per_stage_decoder': configuration_manager.n_conv_per_stage_decoder
     }
     # network class name!!

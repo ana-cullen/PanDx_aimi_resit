@@ -27,7 +27,7 @@ class nnUNetTrainerSaBN(nnUNetTrainer):
     #
     #   {"PANORAMA_0001": 0, "PANORAMA_0002": 1, "PANORAMA_0350": 0, ...}
     # ------------------------------------------------------------------
-    COND_MAP_PATH = "patient_sex_map.json"
+    COND_MAP_PATH = "/vol/csedu-nobackup/course/IMC037_aimi/group09/resit/PanDx_aimi_resit/patient_sex_map.json"
 
     def __init__(self, plans, configuration, fold, dataset_json,
                  unpack_dataset=True, device=torch.device('cuda')):
@@ -60,22 +60,17 @@ class nnUNetTrainerSaBN(nnUNetTrainer):
 
 
     def build_network_architecture(self, plans_manager: PlansManager,
+                                   dataset_json,
                                    configuration_manager: ConfigurationManager,
                                    num_input_channels: int,
-                                   num_output_channels: int,
                                    enable_deep_supervision: bool = True) -> nn.Module:
-        arch_kwargs = dict(configuration_manager.network_arch_init_kwargs)
-        arch_kwargs['norm_op_kwargs'] = dict(arch_kwargs.get('norm_op_kwargs') or {})
-        arch_kwargs['norm_op_kwargs']['num_conditions'] = self.num_conditions
-
         return get_network_from_plans(
-            configuration_manager.network_arch_class_name,
-            arch_kwargs,
-            configuration_manager.network_arch_init_kwargs_req_import,
+            plans_manager,
+            dataset_json,
+            configuration_manager,
             num_input_channels,
-            num_output_channels,
-            allow_init=True,
             deep_supervision=enable_deep_supervision,
+            num_conditions=self.num_conditions,
         )
 
     def train_step(self, batch: dict) -> dict:
