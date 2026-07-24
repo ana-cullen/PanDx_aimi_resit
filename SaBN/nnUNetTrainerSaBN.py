@@ -31,9 +31,9 @@ class nnUNetTrainerSaBN(nnUNetTrainer):
     def _load_cond_map(self) -> Dict[str, int]:
         if self.COND_MAP_PATH is None:
             self.print_to_log_file(
-                "WARNING: SABN_COND_MAP_PATH is not set. All cases will be "
+                "WARNING: COND_MAP_PATH is not set. All cases will be "
                 "treated as a single condition (num_conditions=1), which "
-                "makes SaBN degenerate to plain BatchNorm. Set the env var "
+                "makes SaBN degenerate to plain BatchNorm. Set the var "
                 "to your case_id -> cond_id JSON before training."
             )
             return {}
