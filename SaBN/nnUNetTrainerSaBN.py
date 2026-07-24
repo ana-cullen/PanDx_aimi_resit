@@ -12,21 +12,14 @@ from nnunetv2.training.loss.dice import get_tp_fp_fn_tn
 
 class nnUNetTrainerSaBN(nnUNetTrainer):
 
-    # ------------------------------------------------------------------
-    # A case_id -> cond_id map has to come from somewhere. There's no field
-    # like this anywhere in the base nnUNetTrainer/dataloader, so it's
-    # loaded here from a JSON file you provide, and num_conditions is
-    # derived from it rather than being passed in from outside (see the fix
-    # to build_network_architecture below for why).
-    #
-    # `cond` is deliberately generic: it's whatever categorical label you
-    # want SaBN's independent affine layers indexed by -- scanner/site,
-    # sex, age bracket, vendor, acquisition protocol, task id in a
-    # multi-task setup, etc. This class has no opinion on what it represents,
-    # it just needs a case_id -> int mapping, ints contiguous starting at 0:
+    # COND_MAP_PATH should point to a json file of case_id -> int mappings
+    # with ints contiguous starting at 0. Conditional clinical information 
+    # should be int >= 1. Cases with unknown information should be mapped 
+    # to 0 as this will skip the sandwich affine layer and only run regular
+    # batchnorm
     #
     #   {"PANORAMA_0001": 0, "PANORAMA_0002": 1, "PANORAMA_0350": 0, ...}
-    # ------------------------------------------------------------------
+
     COND_MAP_PATH = "/vol/csedu-nobackup/course/IMC037_aimi/group09/resit/PanDx_aimi_resit/patient_sex_map.json"
 
     def __init__(self, plans, configuration, fold, dataset_json,
