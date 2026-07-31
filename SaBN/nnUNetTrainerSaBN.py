@@ -65,16 +65,12 @@ class _CondAdapter(nn.Module):
 
 
 class nnUNetTrainerSaBN(nnUNetTrainer):
-
+    # Set SABN_COND_MAP_PATH as an environment variable before training.
     # SABN_COND_MAP_PATH should point to a json file of case_id -> int
     # mappings with ints contiguous starting at 0. Conditional clinical
     # information should be int >= 1. Cases with unknown information should
     # be mapped to 0 as this will skip the sandwich affine layer and only
-    # run regular batchnorm. Set it the same way nnUNet_raw/nnUNet_results/
-    # etc are set, e.g. in env.sh -- not hard-coded here, since trainers get
-    # instantiated generically (by nnUNetv2_train, by
-    # initialize_from_trained_model_folder, ...) with no way to pass
-    # trainer-specific constructor args.
+    # run regular batchnorm. 
     #
     #   {"PANORAMA_0001": 0, "PANORAMA_0002": 1, "PANORAMA_0350": 0, ...}
 
@@ -85,14 +81,8 @@ class nnUNetTrainerSaBN(nnUNetTrainer):
         super().__init__(plans, configuration, fold, dataset_json, unpack_dataset, device)
         self.cond_map: Dict[str, int] = self._load_cond_map()
         self.num_conditions = num_conditions_for_map(self.cond_map)
-        # build_network_architecture must work with no trainer instance at
-        # all (that's how nnUNetPredictor.initialize_from_trained_model_folder
-        # reconstructs the network for standalone inference), so it can't
-        # read self.num_conditions or re-derive it from COND_MAP_PATH --
-        # that file may not match what this checkpoint was actually trained
-        # with by the time someone runs inference. Store the one number the
-        # architecture actually needs in plans.json instead, which nnU-Net
-        # already saves alongside the model and reloads for inference.
+        # save num_conditions in plans file to be used during standalone
+        # inference
         self.plans_manager.plans['num_conditions'] = self.num_conditions
 
     def _load_cond_map(self) -> Dict[str, int]:

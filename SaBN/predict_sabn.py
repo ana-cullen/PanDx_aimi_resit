@@ -1,14 +1,12 @@
 """Standalone inference entry point for SaBN-conditioned trainers, mirroring
 nnUNetv2_predict (nnunetv2.inference.predict_from_raw_data.predict_entry_point)
-but using SaBNPredictor so the network's required `cond` argument gets set
-per case instead of crashing with a missing-argument TypeError.
+but using SaBNPredictor
 
 Usage matches nnUNetv2_predict for the flags it supports, plus:
-    --cond-map-path PATH   case_id -> cond_id JSON for cases being predicted
-                            on right now (they won't be in the trainer's
-                            training-time COND_MAP_PATH). Omit to fall back
-                            to that training-time map (cond=0/"unknown" for
-                            any case not in it).
+    --cond-map-path PATH   case_id -> cond_id JSON for inference cases not
+                            in the trainer's training-time COND_MAP_PATH).
+                            Omit to fall back to that training-time map 
+                            (cond=0/"unknown" for any case not in it).
 """
 import argparse
 

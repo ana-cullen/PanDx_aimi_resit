@@ -1,5 +1,6 @@
 import multiprocessing
 import os
+import warnings
 from time import sleep
 from typing import Dict, Optional
 
@@ -19,18 +20,11 @@ from .nnUNetTrainerSaBN import _CondAdapter, cond_id_for_case, load_cond_map, nn
 
 
 class SaBNPredictor(nnUNetPredictor):
-    """nnUNetPredictor for SaBN-conditioned trainers (nnUNetTrainerSaBN and
-    subclasses). The stock nnUNetPredictor calls network(x) with no
-    knowledge of `cond`, which is a required forward() argument for these
-    networks -- see nnUNetTrainerSaBN.perform_actual_validation for the
-    same problem during training-time validation.
-
+    """
     cond_map_path defaults to the trainer's own COND_MAP_PATH (the map used
-    during training), but standalone inference is normally run on cases
-    that aren't in that map -- e.g. main.py's per-patient pipeline knows a
-    single patient's clinical info at run time and has no reason to be in
-    the static training-time map. Pass cond_map_path to point at a JSON
-    built for this run instead (same case_id -> cond_id format).
+    during training). Pass cond_map_path to point at a JSON
+    built for inference cases that don't appear in the training condition map
+    (same case_id -> cond_id format).
     """
 
     def __init__(self, *args, cond_map_path: Optional[str] = None, **kwargs):
@@ -42,6 +36,13 @@ class SaBNPredictor(nnUNetPredictor):
                                              use_folds, checkpoint_name: str = 'checkpoint_final.pth'):
         super().initialize_from_trained_model_folder(model_training_output_dir, use_folds, checkpoint_name)
         cond_map_path = self._cond_map_path if self._cond_map_path is not None else nnUNetTrainerSaBN.COND_MAP_PATH
+        if cond_map_path is None:
+            warnings.warn(
+                "No cond_map_path given and SABN_COND_MAP_PATH is not set: "
+                "every case will fall back to cond=0 (plain BatchNorm, no "
+                "sandwich affine). Pass --cond-map-path or set "
+                "SABN_COND_MAP_PATH if this is unintended."
+            )
         self.cond_map = load_cond_map(cond_map_path)
         self.network = _CondAdapter(self.network)
 
