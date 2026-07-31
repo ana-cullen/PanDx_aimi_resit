@@ -22,6 +22,7 @@ PanDx_aimi_resit/packages/nnunetv2/nnunetv2/run/run_training.py
 
 PanDx_aimi_resit/packages/nnunetv2/nnunetv2/training/nnUNetTrainer/nnUNetTrainer.py
 -  Uncommented self.batch_size = batch_sizes[my_rank] to allow the use of multiple GPUs
+-  Final validation uses non-ddp wrapped module to avoid crashing on multiple GPUs
 
 ## Conditional Clinical information
 The clinical information to be used as the conditional input should be supplied in a json file of case_id -> int mappings with ints contiguous starting at 0. Conditional clinical information should be int >= 1. Cases with unknown information should be mapped to 0 as this will skip the independent affine transformation and only run regular batchnorm
@@ -56,7 +57,7 @@ nnUNetv2_preprocess -d 101 -c 3d_fullres -np 2 -plans_name resEncUNetPlansSabn
 5. Train network: 
 ```
 for FOLD in 0 1 2 3 4; do
-    nnUNetv2_train 101 3d_fullres $FOLD -tr nnUNetTrainerCELossLesionSplitSaBN --npz --c -p resEncUNetPlansSabn -num_gpus 2
+    CUDA_LAUNCH_BLOCKING=1 nnUNetv2_train 101 3d_fullres $FOLD -tr nnUNetTrainerCELossLesionSplitSaBN --npz --c -p resEncUNetPlansSabn -num_gpus 2
 done
 ```
 
