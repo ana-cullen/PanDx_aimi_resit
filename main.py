@@ -143,7 +143,7 @@ def predict(nnunet_model_dir, input_dir, output_dir, task:int, trainer:str="nnUN
             configuration="3d_fullres", checkpoint="checkpoint_final.pth",
             folds="0,1,2,3,4", store_probability_maps=True, tta=True, cond_map_path=None):
 
-    os.environ['RESULTS_FOLDER'] = str(nnunet_model_dir)
+    os.environ['nnUNet_results'] = str(nnunet_model_dir)
 
     if cond_map_path is not None:
         cmd = ['python', '-m', 'SaBN.predict_sabn', '--cond-map-path', str(cond_map_path)]
