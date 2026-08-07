@@ -6,6 +6,7 @@ from nnunetv2.training.loss.deep_supervision import DeepSupervisionWrapper
 from nnunetv2.training.nnUNetTrainer.nnUNetTrainer import nnUNetTrainer
 from nnunetv2.training.nnUNetTrainer.variants.network_architecture import nnUNetTrainerBN
 from nnunetv2.training.loss.robust_ce_loss import RobustCrossEntropyLoss, TopKLoss
+from nnunetv2.training.nnUNetTrainer.variants.network_architecture.nnUNetTrainerBN import nnUNetTrainerBN
 import numpy as np
 import torch
 
