@@ -1,4 +1,4 @@
-#Same split as PanDx paper (arXiv:2503.10068), but with 5 folds instead of 4import glob
+#Same split as PanDx paper (arXiv:2503.10068), but with 5 folds instead of 4
 import glob
 import os
 
@@ -10,8 +10,8 @@ PDAC_LABEL = 1
 N_FOLDS = 4
 N_QUARTILE_BINS = 4
 
-RAW_LABELS_DIR = "workspace/workspace/nnUNet_raw/Dataset101_PDAC/labelsTr"
-PREPROCESSED_DIR = "workspace/workspace/nnUNet_preprocessed/Dataset101_PDAC"
+RAW_LABELS_DIR = "/vol/csedu-nobackup/course/IMC037_aimi/group09/resit/nnUNet_raw/Dataset101_PDAC/labelsTr"
+PREPROCESSED_DIR = "/vol/csedu-nobackup/course/IMC037_aimi/group09/resit/nnUNet_preprocessed/Dataset101_PDAC"
 
 
 def lesion_voxel_count(label_path: str) -> int:

@@ -1,121 +1,71 @@
 # PanDx: AI-assisted Pancreatic Ductal Adenocarcinoma Detection 
 [![arXiv](https://img.shields.io/badge/preprint-2503.10068-blue)](https://arxiv.org/abs/2503.10068) [![cite](https://img.shields.io/badge/cite-BibTex-red)](xx) [![leaderboard](https://img.shields.io/badge/Leaderboard-yellow)](https://panorama.grand-challenge.org/evaluation/testing-phase/leaderboard/) [![website](https://img.shields.io/badge/Challenge%20website-50d13d)](https://panorama.grand-challenge.org/)
 
-### This is Team DTI's :trophy: 1st place solution in the PANORAMA Challenge. 
+# Sandwich BatchNorm extension of PanDx
+This repo is built on off of the PanDx repo with an additional module to train with SandwichBatchNorm (SaBN) instead of regular InstanceNorm or BatchNorm and minor changes to the original nnunetv2 package.
 
-Paper: [PanDx: AI-assisted Early Detection of Pancreatic Ductal Adenocarcinoma on Contrast-enhanced CT](https://arxiv.org/abs/2503.10068)
+## SaBN folder
+This folder contains a custom nnUNetTrainerSaBN.py that inherits from nnunetv2's nnUNetTrainer class with additional logic for passing the clinical information through the network for SaBN. It also contains a
+SaBNPredictor that passes conditional information for inference and
+an entry point for this predictor in predict_sabn.py
 
-<p align="center"><img src="https://github.com/han-liu/PDAC_Detection/blob/main/assets/gt_vs_pred.png" alt="gt_vs_pred" width="750"/></p>
+The SaResNet folder contains the actual SandwichBatchNorm module (SimpleSaBN.py) as well as a modified version of the ResUNet used in the PanDx network that passes the conditional clinical information through the network. Additionally there are some helper functions to set up the network in helpers.py
 
-If you find our code/paper helpful for your research, please kindly consider citing our work:
-```
-@inproceedings{liu2025pandx,
-  title={PanDx: AI-Assisted Early Detection of Pancreatic Ductal Adenocarcinoma on Contrast-Enhanced CT},
-  author={Liu, Han and Gao, Riqiang and Krieg, Eileen and Grbic, Sasa},
-  booktitle={International Workshop on Applications of Medical AI},
-  pages={63--71},
-  year={2025},
-  organization={Springer}
-}
-```
+## Changes to nnunetv2
+Minor changes were made to PanDx's nnunetv2 package to integrate our SaBN implementation
 
-If you have any questions, feel free to contact han.liu@siemens-healthineers.com or open an Issue in this repo. 
+PanDx_aimi_resit/packages/nnunetv2/nnunetv2/training/nnUNetTrainer/variants/loss/nnUNetTrainerCELoss.py
+- Added nnUNetTrainerCELossLesionSplitSaBN class that uses PanDx's CE Loss as the loss function but inherits our custom nnUNetTrainerSaBN class.
 
----
+PanDx_aimi_resit/packages/nnunetv2/nnunetv2/run/run_training.py
+- Commented out nnUNetTrainer subclass assertion from get_trainer_from_args() 
 
-### Installation
-#### Requirements
-```
-cuda-11.1, cudnn/9.0.0-cuda-12
-```
-#### Create a virtual environment:
-```
-conda create pdac python=3.12 -y
-conda activate pdac
-```
+PanDx_aimi_resit/packages/nnunetv2/nnunetv2/training/nnUNetTrainer/nnUNetTrainer.py
+-  Uncommented self.batch_size = batch_sizes[my_rank] to allow the use of multiple GPUs
+-  Final validation uses non-ddp wrapped module to avoid crashing on multiple GPUs
 
-#### Install dependencies
-```
-git clone https://github.com/han-liu/PDAC_Detection.git
-cd PDAC_Detection
-pip install -r requirements.txt
+## Conditional Clinical information
+The clinical information to be used as the conditional input should be supplied in a json file of case_id -> int mappings with ints contiguous starting at 0. Conditional clinical information should be int >= 1. Cases with unknown information should be mapped to 0 as this will skip the independent affine transformation and only run regular batchnorm
 
-cd packages/nnunetv2
-pip install -e .
-    
-cd ../report-guided-annotation
-pip install -e .
-```
+patient_sex_map.json is an example file. clinical.py has basic code to create a mapping json from a csv file with clinical information (hardcoded to patient sex)
 
-#### Download the our models and example testing images [[click to download]](https://drive.google.com/drive/folders/1RpbofQDrQNzwfYjFhQYRRWCN8HhIoZQP?usp=sharing)
-```
-PDAC_Detection/
-└── workspace/
-    ├── nnUNet_raw/
-    ├── nnUNet_preprocessed/
-    └── nnUNet_results/
-        ├── Dataset103_PANORAMA_baseline_Pancreas_Segmentation/
-        └── Dataset107_PDAC_Detection/
-    └── test_example/
-            ├── output/
-            └── input/
-                ├── filename1.nii.gz
-                ├── filename2.mha
-                └── ...
-```
+### Training
+Before training set SABN_COND_MAP_PATH as an environment variable that points to the pre-computed conditional mapping. 
+ 
+The nnUNetTrainerSaBN class sets it's COND_MAP_PATH to the SABN_COND_MAP_PATH path on import.
 
 ### Inference
-#### Set up environment variables for nnU-Net
-```
-export nnUNet_raw="./workspace/nnUNet_raw"
-export nnUNet_preprocessed="./workspace/nnUNet_preprocessed"
-export nnUNet_results="./workspace/nnUNet_results"
-```
+SaBNPredictor can be given a new path to a conditonal map (via --cond-map-path arg) for standalone inference. If this isn't supplied, the nnUNetTrainerSaBN will fall back on the path set as an environment variable and will set the condition of any keys not present in the map to 0/Unknown.
 
-#### To test our model, run:
-```
-python main.py -i ${INPUT_DIR} -o ${OUTPUT_DIR} --inv_alpha ${INV_ALPHA}
-```
-where:
-- `${INPUT_DIR}`  is the directory containing your input images (e.g., nii.gz, mhd, mha, etc).
-- `${OUTPUT_DIR}` is the directory where the prediction will be saved.
-- `${INV_ALPHA}`  controls the expansion of the predicted lesion (larger values predict larger lesions); default=`15`.
+### Plans
+When the conditonal map is loaded in by a nnUNetTrainerSaBN trainer instance it derives the number of conditons from the SABN_COND_MAP_PATH and saves the number of conditions as an additonal key in the plans files (e.g. "num_conditions": 3).
 
-#### For a quick test using the example testing images, run:
-```
-python main.py -i ./workspace/test_example/input -o ./workspace/test_example/output
-```
+During inference the network architecture is reconstructed using the number of conditions given in the plans file to make the conditional embedding.
 
-#### What are the outputs?
-- PDAC detection map (ranging from 0-1) where each predicted lesion is assigned a confidence score.
-- Patient-level likelihood score (computed as the **maximum** value of the detection map)
 
-The PDAC detection maps are saved under `${OUTPUT_DIR}/pdac-detection-map`:
+## Training + Plans
+resEncUNetPlansSabn.json is an example plans file that sets the correct UNet class to run with SaBN
+
+To train a network with SaBN:
+1. Create the clinical information map json file and set SABN_COND_MAP_PATH as an environment variable to point to it.
+2. Run roi.py on full scan data (PanDx Stage 1)
+3. Preprocess ROIs extracted in previous step:
 ```
-├── ${OUTPUT_DIR}/
-    ├── pdac-likelihood.json
-    └── pdac-detection-map/
-        ├── filename1.nii.gz
-        ├── filename2.nii.gz
-        └── ...
+nnUNetv2_preprocess -d 101 -c 3d_fullres -np 2 -plans_name resEncUNetPlansSabn
+```
+4. Make training/validation split by running make_dase_splits.py
+5. Train network: 
+```
+for FOLD in 0 1 2 3 4; do
+    CUDA_LAUNCH_BLOCKING=1 nnUNetv2_train 101 3d_fullres $FOLD -tr nnUNetTrainerCELossLesionSplitSaBN --npz --c -p resEncUNetPlansSabn -num_gpus 2
+done
 ```
 
-The `pdac-likelihood.json` contains the likelihood scores for each patient:
+## Inference
+Use the SaBN.predict_sabn entrypoint for inference. It takes the same args as nnUNetv2_predict as well as an additional --cond-map-path arg that should point to the condtional mapping for inference cases.
+
 ```
-{
-    "filename1": 0.9965946078300476,
-    "filename2": 0.9977765679359436,
-    ...
-}
+python -m SaBN.predict_sabn --cond-map-path [inference_cond_map] -d [task_id] -i [inout_dir] -o [output_dir] -tr nnUNetTrainerCELossLesionSplitSaBN -p resEncUNetPlansSabn --continue_prediction -f 0 1 2 3 4 -chk checkpoint_final.pth --save_probabilities 
 ```
 
-### Acknowledgement
-This code is built upon the following works. We gratefully acknowledge their contribution and encourage users to cite their original work:
-1. Isensee, Fabian, et al. "nnU-Net: a self-configuring method for deep learning-based biomedical image segmentation." Nature methods
-2. Bosma, Joeran S, et al. "Semi-supervised learning with report-guided pseudo labels for deep learning–based prostate cancer detection using biparametric MRI." Radiology AI
-3. Alves, Natália,  et al. "Fully automatic deep learning framework for pancreatic ductal adenocarcinoma detection on computed tomography." Cancers
-
-
-
-
-
+main.py runs the full pipeline and computes the condtional map for patient_sex using the "clinical-information-pancreatic-ct.json" supplied in the input directory.

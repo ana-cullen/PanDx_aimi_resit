@@ -6,6 +6,6 @@ source "$(dirname "${BASH_SOURCE[0]}")/env.sh"
 #   - CE-only loss, DASE lesion-size-stratified folds -> nnUNetTrainerCELossLesionSplit
 #     (picks up nnUNet_preprocessed/Dataset101_PDAC/splits_final.json automatically)
 #   - 5-fold ensemble: final prediction averages softmax across all 5 folds
-for FOLD in 3; do
-    nnUNetv2_train 101 3d_fullres $FOLD -tr nnUNetTrainerCELossLesionSplitBN --npz --c -p resEncUNetPlans -num_gpus 2
+for FOLD in 0; do
+    CUDA_LAUNCH_BLOCKING=1 nnUNetv2_train 101 3d_fullres $FOLD -tr nnUNetTrainerCELossLesionSplitBN --npz -p resEncUNetPlans -num_gpus 2 --val
 done

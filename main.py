@@ -13,6 +13,14 @@ import warnings
 from report_guided_annotation.extract_lesion_candidates import extract_lesion_candidates
 warnings.filterwarnings("ignore")
 
+CLINICAL_INFO_FILENAME = "clinical-information-pancreatic-ct.json"
+
+
+def list_image_paths(img_dir):
+    # input_dir holds both the CECT images and clinical-information-pancreatic-ct.json
+    # side by side -- exclude the latter so it doesn't get read as an image.
+    return sorted(p for p in glob(img_dir + '/*.*') if osp.basename(p) != CLINICAL_INFO_FILENAME)
+
 
 def get_args_parser():
     parser = argparse.ArgumentParser("PDAC detection", add_help=True)
@@ -62,7 +70,7 @@ def downsample_panorama_dataset(img_dir, img_save_dir, resample=(4.5, 4.5, 9.0))
     assert osp.exists(img_dir), f'image directory does not exist: {img_dir}'
     if not osp.exists(img_save_dir):
         os.mkdir(img_save_dir)
-    img_paths = sorted(glob(img_dir + '/*.*'))
+    img_paths = list_image_paths(img_dir)
     if len(img_paths) == 0:
         print('No images found in input directory')
     with tqdm(total=len(img_paths)) as pbar:
@@ -77,7 +85,7 @@ def downsample_panorama_dataset(img_dir, img_save_dir, resample=(4.5, 4.5, 9.0))
 def crop_roi(img_dir, low_msk_dir, save_img_dir, margins=[100, 50, 15]):
     if not osp.exists(save_img_dir):
         os.mkdir(save_img_dir)
-    img_paths = sorted(glob(img_dir + '/*.*'))
+    img_paths = list_image_paths(img_dir)
     crop_coordinates = {}
     with tqdm(total=len(img_paths)) as pbar:
         for img_path in img_paths:
@@ -125,13 +133,23 @@ def crop_roi(img_dir, low_msk_dir, save_img_dir, margins=[100, 50, 15]):
     return crop_coordinates
 
 
-def predict(nnunet_model_dir, input_dir, output_dir, task:int, trainer:str="nnUNetTrainer", plan:str="nnUNetPlans",
-            configuration="3d_fullres", checkpoint="checkpoint_final.pth", 
-            folds="0,1,2,3,4", store_probability_maps=True, tta=True):
+def sex_to_cond_id(sex) -> int:
+    if not sex:
+        return 0
+    return {"F": 1, "M": 2}.get(str(sex).strip().upper(), 0)
 
-    os.environ['RESULTS_FOLDER'] = str(nnunet_model_dir)
-    cmd = [
-        'nnUNetv2_predict',
+
+def predict(nnunet_model_dir, input_dir, output_dir, task:int, trainer:str="nnUNetTrainer", plan:str="nnUNetPlans",
+            configuration="3d_fullres", checkpoint="checkpoint_final.pth",
+            folds="0,1,2,3,4", store_probability_maps=True, tta=True, cond_map_path=None):
+
+    os.environ['nnUNet_results'] = str(nnunet_model_dir)
+
+    if cond_map_path is not None:
+        cmd = ['python', '-m', 'SaBN.predict_sabn', '--cond-map-path', str(cond_map_path)]
+    else:
+        cmd = ['nnUNetv2_predict']
+    cmd += [
         '-d',  str(task),
         '-i',  str(input_dir),
         '-o',  str(output_dir),
@@ -207,8 +225,9 @@ def run(args):
         os.mkdir(osp.join(args.output_dir, "pdac-detection-map"))
 
     image_folder = osp.join(args.input_dir)
-    clinical_info_path = osp.join(args.input_dir, "clinical-information-pancreatic-ct.json")
+    clinical_info_path = osp.join(args.input_dir, CLINICAL_INFO_FILENAME)
 
+    sex_cond_id = 0
     try:
         with open(clinical_info_path, 'r') as file:
             clinical_info = json.load(file)
@@ -217,9 +236,10 @@ def run(args):
         print('sex:',clinical_info['sex'])
         print('study date:',clinical_info['study_date'])
         print('scanner:',clinical_info['scanner'])
+        sex_cond_id = sex_to_cond_id(clinical_info.get('sex'))
     except:
         pass
-    
+
     # Step 1: downsample the dataset 
     print("Step 1/4: downsample the input image...")
     low_image_folder = osp.join(working_folder, 'LowImagesTr')
@@ -246,19 +266,22 @@ def run(args):
     # Step 4: predict on high resolution ROI using nnU-Net
     print("Step 4/4: detect PDAC on the high-resolution ROI...")
     cropped_pred_folder = osp.join(working_folder, 'CroppedPred')
+    cond_map_path = osp.join(working_folder, 'cond_map.json')
+    write_json_file(location=cond_map_path,
+                    content={case_id: sex_cond_id for case_id in crop_coordinates.keys()})
     predict(
-        nnunet_model_dir=args.model_dir, 
-        input_dir=cropped_image_folder, 
+        nnunet_model_dir=args.model_dir,
+        input_dir=cropped_image_folder,
         output_dir=cropped_pred_folder,
-        task=107, 
-        # trainer="nnUNetTrainerCELossLesionSplit",
-        trainer="nnUNetTrainerCELossLesionSplitBN",
-        plan="nnUNetPlans",
+        task=101,
+        trainer="nnUNetTrainerCELossLesionSplitSaBN",
+        plan="resEncUNetPlansSabn",
         folds="0,1,2,3,4",
-        store_probability_maps=True)
+        store_probability_maps=True,
+        cond_map_path=cond_map_path)
 
     npz_fps = sorted(glob(cropped_pred_folder + '/*.npz'))
-    img_fps = sorted(glob(image_folder + '/*.*'))
+    img_fps = list_image_paths(image_folder)
     likelohood = {}
 
     for npz_fp, img_fp in zip(npz_fps, img_fps):

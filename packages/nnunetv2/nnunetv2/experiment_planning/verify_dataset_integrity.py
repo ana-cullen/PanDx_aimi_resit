@@ -199,9 +199,11 @@ def verify_dataset_integrity(folder: str, num_processes: int = 8) -> None:
                 [reader_writer_class] * expected_num_training, [file_ending] * expected_num_training)
         )
         if not all(result):
+            failed = [i for i, ok in zip(training_identifiers, result) if not ok]
             raise RuntimeError(
-                'Some images have errors. Please check text output above to see which one(s) and what\'s going on.')
-
+                'Some images have errors. Failed cases (%d/%d):\n%s' %
+                (len(failed), len(result), '\n'.join(failed))
+            )
     # check for nans
     # check all same orientation nibabel
     print('\n####################')

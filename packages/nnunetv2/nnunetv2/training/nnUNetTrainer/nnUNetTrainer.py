@@ -179,7 +179,7 @@ class nnUNetTrainer(object):
         # self.configure_rotation_dummyDA_mirroring_and_inital_patch_size and will be saved in checkpoints
 
         ### checkpoint saving stuff
-        self.save_every = 50
+        self.save_every = 20
         self.disable_checkpointing = False
 
         ## DDP batch size and oversampling can differ between workers and needs adaptation
@@ -335,10 +335,8 @@ class nnUNetTrainer(object):
             # self.print_to_log_file("worker", my_rank, "oversample", oversample_percents[my_rank])
             # self.print_to_log_file("worker", my_rank, "batch_size", batch_sizes[my_rank])
 
-            # self.batch_size = batch_sizes[my_rank]
+            self.batch_size = batch_sizes[my_rank]
             self.oversample_foreground_percent = oversample_percents[my_rank]
-
-        # self.batch_size = 1 ################################################################################################################################################
 
     def _build_loss(self):
         if self.label_manager.has_regions:
@@ -815,7 +813,7 @@ class nnUNetTrainer(object):
         save_json(self.dataset_json, join(self.output_folder_base, 'dataset.json'), sort_keys=False)
 
         # we don't really need the fingerprint but its still handy to have it with the others
-        shutil.copy(join(self.preprocessed_dataset_folder_base, 'dataset_fingerprint.json'),
+        shutil.copyfile(join(self.preprocessed_dataset_folder_base, 'dataset_fingerprint.json'),
                     join(self.output_folder_base, 'dataset_fingerprint.json'))
 
         # produces a pdf in output folder
@@ -1104,7 +1102,9 @@ class nnUNetTrainer(object):
         predictor = nnUNetPredictor(tile_step_size=0.5, use_gaussian=True, use_mirroring=True,
                                     perform_everything_on_gpu=True, device=self.device, verbose=False,
                                     verbose_preprocessing=False, allow_tqdm=False)
-        predictor.manual_initialization(self.network, self.plans_manager, self.configuration_manager, None,
+        # Run non-ddp wrapped module for validation
+        validation_network = self.network.module if self.is_ddp else self.network
+        predictor.manual_initialization(validation_network, self.plans_manager, self.configuration_manager, None,
                                         self.dataset_json, self.__class__.__name__,
                                         self.inference_allowed_mirroring_axes)
 
