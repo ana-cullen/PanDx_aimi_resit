@@ -146,7 +146,7 @@ def predict(nnunet_model_dir, input_dir, output_dir, task:int, trainer:str="nnUN
     os.environ['nnUNet_results'] = str(nnunet_model_dir)
 
     if cond_map_path is not None:
-        cmd = ['python', '-m', 'SaBN.predict_sabn', '--cond-map-path', str(cond_map_path)]
+        cmd = ['python3', '-m', 'SaBN.predict_sabn', '--cond-map-path', str(cond_map_path)]
     else:
         cmd = ['nnUNetv2_predict']
     cmd += [

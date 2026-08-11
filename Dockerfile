@@ -1,14 +1,17 @@
 #FROM --platform=linux/amd64 pytorch/pytorch
 
-FROM nvidia/cuda:12.2.0-runtime-ubuntu20.04 AS base
+FROM nvidia/cuda:12.2.0-runtime-ubuntu22.04 AS base
+
 
 ENV PYTHONUNBUFFERED 1
 
 ENV PYTHONWARNINGS="ignore"
 
 RUN apt-get update && \
-  apt-get install -y software-properties-common && \
-  add-apt-repository ppa:deadsnakes/ppa && \
+  apt-get install -y --no-install-recommends ca-certificates gnupg wget && \
+  wget -qO - "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0xBA6932366A755776" | gpg --dearmor -o /usr/share/keyrings/deadsnakes.gpg && \
+  echo "deb [signed-by=/usr/share/keyrings/deadsnakes.gpg] https://ppa.launchpadcontent.net/deadsnakes/ppa/ubuntu jammy main" > /etc/apt/sources.list.d/deadsnakes.list && \
+  apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y \
   git \
   wget \
@@ -104,7 +107,6 @@ RUN pip3 install \
 
 COPY --chown=user:user ./SaBN/ /opt/app/SaBN/
 
-COPY --chown=user:user ./resEncUNetPlansSabn.json /opt/app/
  
 ### Define workdir
 

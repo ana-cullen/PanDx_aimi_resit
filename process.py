@@ -1,6 +1,7 @@
 import subprocess
 import shutil
 import os
+import json
 from glob import glob
 import SimpleITK as sitk
 
@@ -26,15 +27,15 @@ subprocess.run([
     "-m", NNUNET_RESULTS_DIR
 ], check=True)
 
-# main.py writes <case-id>.nii.gz; PANORAMA expects a fixed detection_map.mha
 produced = glob(os.path.join(OUTPUT_MAP_DIR, "*.nii.gz"))
 assert len(produced) == 1, f"expected exactly one detection map, got {produced}"
-sitk.WriteImage(sitk.ReadImage(produced[0]), os.path.join(OUTPUT_MAP_DIR, "detection_map.mha"))
+uuid_stem = os.path.splitext(os.path.basename(produced[0]))[0]
+sitk.WriteImage(sitk.ReadImage(produced[0]), os.path.join(OUTPUT_MAP_DIR, f"{uuid_stem}.mha"))
 os.remove(produced[0])
 
 
-shutil.copy(
-    os.path.join("/output/images", "pdac-likelihood.json"),
-    OUTPUT_LIKELIHOOD
-)
-
+with open(os.path.join("/output/images", "pdac-likelihood.json")) as f:
+    scores = json.load(f)
+assert len(scores) == 1, f"expected exactly one likelihood score, got {scores}"
+with open(OUTPUT_LIKELIHOOD, "w") as f:
+    json.dump(list(scores.values())[0], f)
